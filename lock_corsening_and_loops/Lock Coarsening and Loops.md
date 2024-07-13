@@ -61,6 +61,7 @@ Benchmark       Mode  Cnt     Score    Error  Units
 LockRoach.test  avgt    5  4015.255 ± 69.875  ns/op
 ```
 이 숫자로는 무엇인지 판단할 수 없다. 그럼 실제로 JVM이 어떻게 동작하는지 살펴보자. `-prof perfasm`은 JMH의 프로파일링 옵션으로 생성된 코드에서 가장 많이 실행되는 부분을 보여준다. 처음 보면 무서운 출력이 나온다고 한다.(시도했지만 Window환경이라 실패했다. 다시 Linux환경에서 실행할 계획이다.)
+
 실제 글 저자의 어셈블리 코드를 확인해보자.
 ```asm
 ↗  0x00007f455cc708c1: lea    0x20(%rsp),%rbx
@@ -89,6 +90,22 @@ LockRoach.test  avgt    5  4015.255 ± 69.875  ns/op
 # LoopUnrollLimit=1
 LockRoach.test  avgt    5  15816.794 ± 249.303  ns/op
 ```
-약 4배정도의 성능 차이를 확인할 수 있다. JVM똑똑하다.
+약 4배정도의 성능 차이를 확인할 수 있다.
+그렇다면 'LoopUnrollLimit=1'옵션을 적용하는 어셈블리어 코드를 확인하자.
+
+```asm
+ ↗  0x00007f964d0893d2: lea    0x20(%rsp),%rbx
+ │          < 어쩌고저쩌고, 모니터 진입 >
+ │  0x00007f964d089429: mov    (%rsp),%r10        ; $this 로드
+ │  0x00007f964d08942d: addl   $0x42,0xc(%r10)    ; $this.x += 0x42
+ │          < 어쩌고저쩌고, 모니터 종료 >
+ │  0x00007f964d0894be: inc    %ebp               ; c++
+ │  0x00007f964d0894c0: cmp    $0x3e8,%ebp        ; c < 1000?
+ ╰  0x00007f964d0894c6: jl     0x00007f964d0893d2 ;
+```
+모든게 확인 되었다. 끝!
 
 추가로 처음테스트 할때, Amazon사의 corretto-17.0.9사용했으나, 'LoopUnrollLimit=1'옵션 적용하여도 성능이 똑같았다. 기존 옵션에 성능 최적화가 이루어지지 않은듯 하다.
+
+### References
+- [JVM Anatomy Quark #1: Lock Coarsening and Loops](https://shipilev.net/jvm/anatomy-quarks/1-lock-coarsening-for-loops/)
