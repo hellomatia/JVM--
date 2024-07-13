@@ -54,7 +54,8 @@ synchronized (this) {
 JMH툴을 사용하여 벤치마킹 테스트를 진행하였다.
 밴치마킹 성능을 살펴보았더니 다음과 같은 결과가 나왔다.
 
-*테스트 환경*
+**테스트 환경**
+
 | Window11, intel i5, JDK 1.8.0_332
 ```
 Benchmark       Mode  Cnt     Score    Error  Units
@@ -91,9 +92,9 @@ LockRoach.test  avgt    5  4015.255 ± 69.875  ns/op
 LockRoach.test  avgt    5  15816.794 ± 249.303  ns/op
 ```
 약 4배정도의 성능 차이를 확인할 수 있다.
-그렇다면 'LoopUnrollLimit=1'옵션을 적용하는 어셈블리어 코드를 확인하자.
+그렇다면 'LoopUnrollLimit=1'옵션이 적용된 어셈블리어 코드를 확인하자.
 
-```asm
+```java
  ↗  0x00007f964d0893d2: lea    0x20(%rsp),%rbx
  │          < 어쩌고저쩌고, 모니터 진입 >
  │  0x00007f964d089429: mov    (%rsp),%r10        ; $this 로드
@@ -105,7 +106,7 @@ LockRoach.test  avgt    5  15816.794 ± 249.303  ns/op
 ```
 모든게 확인 되었다. 끝!
 
-추가로 처음테스트 할때, Amazon사의 corretto-17.0.9사용했으나, 'LoopUnrollLimit=1'옵션 적용하여도 성능이 똑같았다. 기존 옵션에 성능 최적화가 이루어지지 않은듯 하다.
+추가로 처음테스트 할때, Amazon사의 corretto-17.0.9사용했으나, 'LoopUnrollLimit=1'옵션 적용하여도 성능이 똑같았다. 언롤링 최적화가 이루어지지 않은듯 하다.
 
 ### References
 - [JVM Anatomy Quark #1: Lock Coarsening and Loops](https://shipilev.net/jvm/anatomy-quarks/1-lock-coarsening-for-loops/)
